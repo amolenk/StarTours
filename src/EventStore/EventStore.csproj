@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net6</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="js\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.16.0" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.26.1" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="js\*.*">
