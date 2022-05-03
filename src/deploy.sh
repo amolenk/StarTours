@@ -3,9 +3,9 @@
 # Variable block
 location="West Europe"
 failoverLocation="South Central US"
-resourceGroup="StarTours"
-account="cosmos-star-tours"
-database="cosmosdb-star-tours"
+resourceGroup="StarToursDemos"
+account="cosmosdb-star-tours"
+database="cosmosdb-star-tours-db"
 container="events"
 partitionKey="/streamId"
 
@@ -22,7 +22,8 @@ az cosmosdb create \
     --resource-group $resourceGroup \
     --kind GlobalDocumentDB \
     --locations regionName="$location" failoverPriority=0 \
-    --default-consistency-level "Session"
+    --default-consistency-level "Session" \
+    --enable-free-tier true
 
 # Create a SQL API database
 echo "Creating $database"
@@ -32,7 +33,7 @@ az cosmosdb sql database create \
     --name $database
 
 # Create a SQL API container
-echo "Creating $container with $maxThroughput"
+echo "Creating $container"
 az cosmosdb sql container create \
     --account-name $account \
     --resource-group $resourceGroup \

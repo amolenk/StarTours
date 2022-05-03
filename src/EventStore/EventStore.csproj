@@ -1,14 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net6</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-  <ItemGroup>
-    <Folder Include="js\" />
-  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.26.1" />
   </ItemGroup>
+  
   <ItemGroup>
+    <Folder Include="js\" />
     <Content Include="js\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

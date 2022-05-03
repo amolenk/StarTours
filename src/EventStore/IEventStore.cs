@@ -7,8 +7,6 @@ namespace EventStore
     {
         Task<EventStream> LoadStreamAsync(string streamId);
 
-        Task<EventStream> LoadStreamAsync(string streamId, int fromVersion);
-  
         Task<bool> AppendToStreamAsync(
             string streamId,
             int expectedVersion,

@@ -1,12 +1,12 @@
-using System.Threading.Tasks;
-using Demo.Domain;
+// using System.Threading.Tasks;
+// using Demo.Domain;
 
-namespace Demo.Domain
-{
-    public interface IMeterRepository
-    {
-        Task<Meter> LoadMeterAsync(string id);
+// namespace Demo.Domain
+// {
+//     public interface IMeterRepository
+//     {
+//         Task<Meter> LoadMeterAsync(string id);
 
-        Task<bool> SaveMeterAsync(Meter meter);
-    }
-}
+//         Task<bool> SaveMeterAsync(Meter meter);
+//     }
+// }

@@ -4,13 +4,13 @@ using Newtonsoft.Json.Linq;
 
 namespace EventStore
 {
-    public class EventWrapper
+    public class EventEnvelope
     {
         [JsonProperty("id")]
         public string Id { get; set; }
 
-        [JsonProperty("stream")]
-        public StreamInfo StreamInfo { get; set; }
+        [JsonProperty("streamId")]
+        public string StreamId { get; set; }
 
         [JsonProperty("eventType")]
         public string EventType { get; set; }
