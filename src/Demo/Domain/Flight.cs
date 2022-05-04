@@ -7,7 +7,7 @@ namespace Demo.Domain
     {
         public string FlightNumber { get; private set; }
 
-        internal int Version = -1;
+        internal int Version = 0;
 
         internal List<IEvent> PendingChanges { get; } = new();
 
@@ -37,7 +37,11 @@ namespace Demo.Domain
                     break;
             }
 
-            if (!isReplay)
+            if (isReplay)
+            {
+                Version++;
+            }
+            else
             {
                 PendingChanges.Add(@event);
             }

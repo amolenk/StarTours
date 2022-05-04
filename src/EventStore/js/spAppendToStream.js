@@ -1,35 +1,104 @@
-﻿function appendToStream(streamId, expectedVersion, events) {
+﻿function appendToStream(streamId, expectedVersion, serializedEvents) {
+    var events = JSON.parse(serializedEvents);
+    var newVersion = expectedVersion + events.length;
 
-    var versionQuery = 
-    {     
-        'query' : 'SELECT Max(e.stream.version) FROM events e WHERE e.stream.id = @streamId',
-        'parameters' : [{ 'name': '@streamId', 'value': streamId }] 
-    };
+    if (expectedVersion === 0) {
+        tryCreateVersionDocument(versionDocumentCallback);
+    }
+    else {
+        tryUpdateVersionDocument(versionDocumentCallback);
+    }
 
-    const isAccepted = __.queryDocuments(__.getSelfLink(), versionQuery,
-        function (err, items, options) {
-            if (err) throw new Error("Unable to get stream version: " + err.message);
+    function versionDocumentCallback(versionDocumentResult) {
+        if (versionDocumentResult) {
+            createEventDocuments(function () { __.response.setBody(true); });
+        }
+        else {
+            __.response.setBody(false);
+        }
+    }
 
-            if (!items || !items.length) {
-                throw new Error("No results from stream version query.");
-            }
+    function tryCreateVersionDocument(onCompletedCallback) {
 
-            var currentVersion = items[0].$1;
+        var versionDocument =
+        {
+            id: "version",
+            streamId: streamId,
+            version: newVersion
+        };
 
-            // Concurrency check.
-            if ((!currentVersion && expectedVersion == 0)
-                || (currentVersion == expectedVersion))
-            {
-                // Everything's fine, bulk insert the events.
-                JSON.parse(events).forEach(event =>
-                    __.createDocument(__.getSelfLink(), event));
-
-                __.response.setBody(true);
+        var isAccepted = __.createDocument(__.getSelfLink(), versionDocument, function (err) {
+            if (err) {
+                if (err.number == 409) { // Conflict
+                    callback(false);
+                }
+                else {
+                    throw err;
+                }
             }
             else {
-                __.response.setBody(false);
+                onCompletedCallback(true);
             }
         });
 
-    if (!isAccepted) throw new Error('The query was not accepted by the server.');
+        if (!isAccepted) throw new Error("Error adding version document.");
+    }
+
+    function tryUpdateVersionDocument(onCompletedCallback) {
+
+        var isAccepted = __.filter(
+            function (x) { return x.id === "version" && x.streamId === streamId },
+            function (err, results, options) {
+                if (err) throw err;
+
+                if (!results || !results.length) throw new Error("Failed to find the version document.");
+
+                var versionDocument = results[0];
+
+                if (versionDocument.version === expectedVersion) {
+                    versionDocument.version = newVersion;
+
+                    var isAccepted = __.replaceDocument(versionDocument._self, versionDocument, function (err) {
+                        if (err) throw err;
+                        onCompletedCallback(true);
+                    });
+
+                    if (!isAccepted) throw new Error("Failed to update version document.");
+                }
+                else {
+                    onCompletedCallback(false);
+                }
+
+            });
+
+        if (!isAccepted) throw new Error("Error retrieving metadata document.");
+    }
+
+    function createEventDocuments(onCompletedCallback) {
+        var index = 0;
+        var version = expectedVersion + 1;
+
+        createEventDocument(callback);
+
+        function createEventDocument(callback) {
+            var eventDocument = events[index];
+
+            var isAccepted = __.createDocument(__.getSelfLink(), eventDocument, callback);
+            if (!isAccepted) throw new Error("Error creating event document.");
+        }
+
+        function callback(err, doc, options) {
+            if (err) throw err;
+
+            index++;
+            version++;
+
+            if (index < events.length) {
+                createEventDocument(callback);
+            }
+            else {
+                onCompletedCallback();
+            }
+        }
+    }
 }

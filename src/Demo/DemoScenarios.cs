@@ -1,59 +1,58 @@
 ﻿using Demo.Domain;
 using Demo.Domain.Events;
 using EventStore;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Scripts;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Net;
 
 namespace Demo;
 
 [TestClass]
-public class DemoScenarios : IEventTypeResolver
+public class DemoScenarios
 {
     // private const string EndpointUrl = "https://cosmoseventsourcing.documents.azure.com:443/";
     private static readonly string CosmosDbConnectionString = Environment.GetEnvironmentVariable("STAR_TOURS_CONNECTION_STRING_COSMOS_DB");
     private const string DatabaseId = "cosmosdb-star-tours-db";
+    private const string EventTypeFormat = "Demo.Domain.Events.{0}, Demo";
 
-    public Type GetEventType(string typeName)
+    [TestMethod]
+    public async Task SC00_MigrateDB()
     {
-        return Type.GetType($"Demo.Domain.Events.{typeName}, Demo");
+        CosmosClient client = new CosmosClient(CosmosDbConnectionString);
+
+        await client.CreateDatabaseIfNotExistsAsync(DatabaseId, ThroughputProperties.CreateManualThroughput(400));
+        Database database = client.GetDatabase(DatabaseId);
+
+        await database.DefineContainer("events", "/stream").CreateIfNotExistsAsync();
+        //await database.DefineContainer("leases", "/id").CreateIfNotExistsAsync();
+        //await database.DefineContainer("views", "/id").CreateIfNotExistsAsync();
+        //await database.DefineContainer("snapshots", "/id").CreateIfNotExistsAsync();
+
+        StoredProcedureProperties storedProcedureProperties = new StoredProcedureProperties
+        {
+            Id = "spAppendToStream",
+            Body = File.ReadAllText("js/spAppendToStream.js")
+        };
+
+        Container eventsContainer = database.GetContainer("events");
+        try
+        {
+            await eventsContainer.Scripts.DeleteStoredProcedureAsync("spAppendToStream");
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            // Stored procedure didn't exist yet.
+        }
+        await eventsContainer.Scripts.CreateStoredProcedureAsync(storedProcedureProperties);
     }
-
-    // [TestMethod]
-    // public async Task SC00_MigrateDB()
-    // {
-    //     CosmosClient client = new CosmosClient(EndpointUrl, AuthorizationKey);
-        
-    //     await client.CreateDatabaseIfNotExistsAsync(DatabaseId, ThroughputProperties.CreateManualThroughput(400));
-    //     Database database = client.GetDatabase(DatabaseId);
-
-    //     await database.DefineContainer("events", "/stream/id").CreateIfNotExistsAsync();
-    //     await database.DefineContainer("leases", "/id").CreateIfNotExistsAsync();
-    //     await database.DefineContainer("views", "/id").CreateIfNotExistsAsync();
-    //     await database.DefineContainer("snapshots", "/id").CreateIfNotExistsAsync();
-
-    //     StoredProcedureProperties storedProcedureProperties = new StoredProcedureProperties
-    //     {
-    //         Id = "spAppendToStream",
-    //         Body = File.ReadAllText("js/spAppendToStream.js")
-    //     };
-
-    //     Container eventsContainer = database.GetContainer("events");
-    //     try
-    //     {
-    //         await eventsContainer.Scripts.DeleteStoredProcedureAsync("spAppendToStream");
-    //     }
-    //     catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-    //     {
-    //         // Stored procedure didn't exist yet.
-    //     } 
-    //     await eventsContainer.Scripts.CreateStoredProcedureAsync(storedProcedureProperties);
-    // }
 
     [TestMethod]
     public async Task SC01_CreateStreamAsync()
     {
-        IEventStore eventStore = new CosmosEventStore(this, CosmosDbConnectionString, DatabaseId);
+        IEventStore eventStore = new CosmosEventStore(EventTypeFormat, CosmosDbConnectionString, DatabaseId);
 
-        var flightNumber = new Random().Next(100000, 1000000).ToString();
+        var flightNumber = "KL1108";// new Random().Next(100000, 1000000).ToString();
 
         var flight = new Flight(flightNumber);
 
@@ -61,10 +60,49 @@ public class DemoScenarios : IEventTypeResolver
 
         var streamId = $"flight:{flightNumber}";
 
-        await eventStore.AppendToStreamAsync(
+        var result = await eventStore.AppendToStreamAsync(
             streamId,
             flight.Version,
             flight.PendingChanges);
+
+        Assert.IsTrue(result);
+    }
+
+    [TestMethod]
+    public async Task SC01_UpdateStreamAsync()
+    {
+        IEventStore eventStore = new CosmosEventStore(EventTypeFormat, CosmosDbConnectionString, DatabaseId);
+
+        var flightNumber = "KL1108";// new Random().Next(100000, 1000000).ToString();
+
+        var flight = new Flight(flightNumber);
+
+        var changes = flight.PendingChanges;
+
+        var streamId = $"flight:{flightNumber}";
+
+        var result = await eventStore.AppendToStreamAsync(
+            streamId,
+            1,
+            flight.PendingChanges);
+
+        Assert.IsTrue(result);
+    }
+
+    [TestMethod]
+    public async Task SC01_LoadStreamAsync()
+    {
+        IEventStore eventStore = new CosmosEventStore(EventTypeFormat, CosmosDbConnectionString, DatabaseId);
+
+        var flightNumber = "KL1108";// new Random().Next(100000, 1000000).ToString();
+
+        var streamId = $"flight:{flightNumber}";
+
+        var result = await eventStore.LoadStreamAsync(streamId);
+
+        var flight = new Flight(result);
+
+        Assert.AreEqual(1, result.Count());
     }
 
     // [TestMethod]
@@ -80,7 +118,7 @@ public class DemoScenarios : IEventTypeResolver
     //         Date = new DateTime(2020, 4, 30),
     //         Readings = GenerateMeterReadings(new DateTime(2020, 4, 30)).ToArray()
     //     };
-            
+
     //     var succes = await eventStore.AppendToStreamAsync(
     //         streamId,
     //         stream.Version,
@@ -93,7 +131,7 @@ public class DemoScenarios : IEventTypeResolver
     // public async Task SC03_DomainAddAsync()
     // {
     //     IEventStore eventStore = new CosmosEventStore(this, EndpointUrl, AuthorizationKey, DatabaseId);
-        
+
     //     // Request parameters.
     //     var meterId = "87000002";
     //     var postalCode = "9999 BB";
@@ -113,7 +151,7 @@ public class DemoScenarios : IEventTypeResolver
     // public async Task SC04_DomainUpdateAsync()
     // {
     //     IEventStore eventStore = new CosmosEventStore(this, EndpointUrl, AuthorizationKey, DatabaseId);
-        
+
     //     // Request parameters.
     //     var meterId = "87000002";
     //     var activationCode = "745-195";
@@ -158,7 +196,7 @@ public class DemoScenarios : IEventTypeResolver
     // {
     //     IEventStore eventStore = new CosmosEventStore(this, EndpointUrl, AuthorizationKey, DatabaseId);
     //     ISnapshotStore snapshotStore = new CosmosSnapshotStore(EndpointUrl, AuthorizationKey, DatabaseId);
-        
+
     //     // Request parameters.
     //     var meterId = "87000001";
 
@@ -183,7 +221,7 @@ public class DemoScenarios : IEventTypeResolver
     // {
     //     IEventStore eventStore = new CosmosEventStore(this, EndpointUrl, AuthorizationKey, DatabaseId);
     //     ISnapshotStore snapshotStore = new CosmosSnapshotStore(EndpointUrl, AuthorizationKey, DatabaseId);
-        
+
     //     var repository = new MeterRepositorySnapshotDecorator(
     //         eventStore,
     //         snapshotStore,
@@ -215,7 +253,7 @@ public class DemoScenarios : IEventTypeResolver
     //             Readings = GenerateMeterReadings(fromDate.AddDays(i)).ToArray()
     //         })
     //         .ToList();
-        
+
     //     await eventStore.AppendToStreamAsync(streamId, stream.Version, events);
 
     //     // Wait a little while before adding the last one.

@@ -1,62 +1,52 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
-using Microsoft.Azure.Cosmos;
+﻿using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace EventStore;
 
 public class CosmosEventStore : IEventStore
 {
-    private readonly IEventTypeResolver _eventTypeResolver;
+    private readonly string _eventTypeFormat;
     private readonly CosmosClient _client;
     private readonly string _databaseId;
     private readonly string _containerId;
 
     public CosmosEventStore(
-        IEventTypeResolver eventTypeResolver,
+        string eventTypeFormat,
         string connectionString, 
         string databaseId,
         string containerId = "events")
     {
-        _eventTypeResolver = eventTypeResolver;
+        _eventTypeFormat = eventTypeFormat;
         _client = new CosmosClient(connectionString);
         _databaseId = databaseId;
         _containerId = containerId;
     }
 
-    public async Task<EventStream> LoadStreamAsync(string streamId)
+    public async Task<IList<IEvent>> LoadStreamAsync(string streamId)
     {
         Container container = _client.GetContainer(_databaseId, _containerId);
 
         var sqlQueryText = "SELECT * FROM events e"
-            + " WHERE e.stream.id = @streamId"
-            + " ORDER BY e.stream.version"; 
+            + " WHERE e.id <> 'version' AND e.stream = @streamId"
+            + " ORDER BY e.version";
 
         QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText)
             .WithParameter("@streamId", streamId);
 
-        int version = 0;
         var events = new List<IEvent>();
 
-        FeedIterator<EventEnvelope> feedIterator = container.GetItemQueryIterator<EventEnvelope>(queryDefinition);
+        FeedIterator<EventDocument> feedIterator = container.GetItemQueryIterator<EventDocument>(queryDefinition);
         while (feedIterator.HasMoreResults)
         {
-            FeedResponse<EventEnvelope> response = await feedIterator.ReadNextAsync();
-            foreach (var eventWrapper in response)
+            FeedResponse<EventDocument> response = await feedIterator.ReadNextAsync();
+            foreach (var eventDocument in response)
             {
-                //version = eventWrapper.StreamInfo.Version;
-
-                events.Add(eventWrapper.GetEvent(_eventTypeResolver));
+                events.Add(eventDocument.GetEvent(_eventTypeFormat));
             }
         }
 
-        return new EventStream(streamId, version, events);
+        return events;
     }
-
-    
 
     public async Task<bool> AppendToStreamAsync(string streamId, int expectedVersion, IEnumerable<IEvent> events)
     {
@@ -76,14 +66,8 @@ public class CosmosEventStore : IEventStore
 
     private static string SerializeEvents(string streamId, int expectedVersion, IEnumerable<IEvent> events)
     {
-        var items = events.Select(e => new EventEnvelope
-        {
-            Id = $"{streamId}:{++expectedVersion}",
-            StreamId = streamId,
-            EventType = e.GetType().Name,
-            EventData = JObject.FromObject(e)
-        });
+        var eventEnvelopes = events.Select(e => EventDocument.Create(streamId, ++expectedVersion, e));
 
-        return JsonConvert.SerializeObject(items);
+        return JsonConvert.SerializeObject(eventEnvelopes);
     }
 }
