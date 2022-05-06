@@ -23,14 +23,14 @@
         var versionDocument =
         {
             id: "version",
-            streamId: streamId,
+            stream: streamId,
             version: newVersion
         };
 
         var isAccepted = __.createDocument(__.getSelfLink(), versionDocument, function (err) {
             if (err) {
                 if (err.number == 409) { // Conflict
-                    callback(false);
+                    onCompletedCallback(false);
                 }
                 else {
                     throw err;
@@ -47,7 +47,7 @@
     function tryUpdateVersionDocument(onCompletedCallback) {
 
         var isAccepted = __.filter(
-            function (x) { return x.id === "version" && x.streamId === streamId },
+            function (x) { return x.id === "version" && x.stream === streamId },
             function (err, results, options) {
                 if (err) throw err;
 

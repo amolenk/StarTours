@@ -2,7 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net6</TargetFramework>
+    <Configurations>Debug;Release;Migrate</Configurations>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\amolenk\.nuget\packages\microsoft.azure.cosmos\3.16.0\contentFiles\any\netstandard2.0\ThirdPartyNotice.txt" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.16.0" />

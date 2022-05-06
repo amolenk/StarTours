@@ -1,5 +1,6 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace EventStore;
 
@@ -26,7 +27,7 @@ public class CosmosEventStore : IEventStore
     {
         Container container = _client.GetContainer(_databaseId, _containerId);
 
-        var sqlQueryText = "SELECT * FROM events e"
+        var sqlQueryText = "SELECT e.type, e.data FROM events e"
             + " WHERE e.id <> 'version' AND e.stream = @streamId"
             + " ORDER BY e.version";
 
@@ -35,16 +36,28 @@ public class CosmosEventStore : IEventStore
 
         var events = new List<IEvent>();
 
-        FeedIterator<EventDocument> feedIterator = container.GetItemQueryIterator<EventDocument>(queryDefinition);
+        var sw = Stopwatch.StartNew();
+        double ru = -1;
+
+        FeedIterator<EventDocument> feedIterator = container.GetItemQueryIterator<EventDocument>(
+            queryDefinition,
+            requestOptions: new QueryRequestOptions() { PartitionKey = new PartitionKey(streamId) });
+
         while (feedIterator.HasMoreResults)
         {
-            FeedResponse<EventDocument> response = await feedIterator.ReadNextAsync();
-            foreach (var eventDocument in response)
+            FeedResponse<EventDocument> feedResponse = await feedIterator.ReadNextAsync();
+            ru = feedResponse.RequestCharge;
+
+            foreach (var eventDocument in feedResponse)
             {
-                events.Add(eventDocument.GetEvent(_eventTypeFormat));
+                //events.Add(eventDocument.GetEvent(_eventTypeFormat));
             }
         }
 
+        var elapsted = sw.ElapsedMilliseconds;
+
+        Console.WriteLine(ru.ToString());
+        Console.WriteLine(elapsted);
         return events;
     }
 

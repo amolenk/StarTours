@@ -6,7 +6,7 @@ namespace EventStore;
 public class EventDocument
 {
     [JsonProperty("id")]
-    public string Id => $"event:{Version}";
+    public string Id { get; set; }
 
     [JsonProperty("stream")]
     public string StreamId { get; set; }
@@ -22,6 +22,7 @@ public class EventDocument
 
     public static EventDocument Create(string streamId, int version, IEvent @event) => new EventDocument
     {
+        Id = $"event:{version}",
         StreamId = streamId,
         Version = version,
         EventType = @event.GetType().Name,

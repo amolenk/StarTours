@@ -4,6 +4,6 @@ namespace EventStore
 {
     public interface IEvent
     {
-        DateTime Timestamp { get; }
+//        DateTime Timestamp { get; }
     }
 }
