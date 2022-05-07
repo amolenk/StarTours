@@ -2,12 +2,11 @@
 
 # Variable block
 location="West Europe"
-failoverLocation="South Central US"
 resourceGroup="StarToursDemos"
 account="cosmosdb-star-tours"
 database="cosmosdb-star-tours-db"
 container="events"
-partitionKey="/streamId"
+partitionKey="/stream"
 
 # Create a resource group
 echo "Creating $resourceGroup in $location..."
