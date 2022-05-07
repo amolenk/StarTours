@@ -1,0 +1,63 @@
+[
+		{
+			"name": "Tatooine",
+			"climate": "arid",
+			"gravity": "1 standard",
+			"terrain": "desert"
+		},
+		{
+			"name": "Alderaan",
+			"climate": "temperate",
+			"gravity": "1 standard",
+			"terrain": "grasslands, mountains"
+		},
+		{
+			"name": "Yavin IV",
+			"climate": "temperate, tropical",
+			"gravity": "1 standard",
+			"terrain": "jungle, rainforests"
+		},
+		{
+			"name": "Hoth",
+			"climate": "frozen",
+			"gravity": "1.1 standard",
+			"terrain": "tundra, ice caves, mountain ranges"
+		},
+		{
+			"name": "Dagobah",
+			"climate": "murky",
+			"gravity": "N/A",
+			"terrain": "swamp, jungles"
+		},
+		{
+			"name": "Bespin",
+			"climate": "temperate",
+			"gravity": "1.5 (surface), 1 standard (Cloud City)",
+			"terrain": "gas giant"
+		},
+		{
+			"name": "Endor",
+			"climate": "temperate",
+			"gravity": "0.85 standard",
+			"terrain": "forests, mountains, lakes"
+		},
+		{
+			"name": "Naboo",
+			"climate": "temperate",
+			"gravity": "1 standard",
+			"terrain": "grassy hills, swamps, forests, mountains",
+			"surface_water": "12"
+		},
+		{
+			"name": "Coruscant",
+			"climate": "temperate",
+			"gravity": "1 standard",
+			"terrain": "cityscape, mountains"
+		},
+		{
+			"name": "Kamino",
+			"climate": "temperate",
+			"gravity": "1 standard",
+			"terrain": "ocean"
+    }
+  ]

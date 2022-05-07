@@ -22,8 +22,7 @@ az cosmosdb create \
     --capabilities EnableGremlin \
     --default-consistency-level Eventual \
     --locations regionName="$location" failoverPriority=0 \
-    --default-consistency-level "Session" \
-    --enable-free-tier true
+    --default-consistency-level "Session"
 
 # Create a Gremlin database
 echo "Creating $database with $account"
@@ -60,8 +59,14 @@ az cosmosdb gremlin graph create \
     --resource-group $resourceGroup \
     --database-name $database \
     --name $graph \
-    --throughput 400 #--idx @idxpolicy-$randomIdentifier.json
-#    -p "/zipcode" \
+    --throughput 400 \
+    --partition-key-path "/partitionKey"
 
 # Clean up temporary index policy file
 #rm -f "idxpolicy-$randomIdentifier.json"
+
+# Printing connection string
+az cosmosdb keys list \
+    --name $account \
+    --resource-group $resourceGroup \
+    --type connection-strings

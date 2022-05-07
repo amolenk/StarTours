@@ -7,13 +7,11 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/CosmosEventSourcing.sln"
+                "${workspaceFolder}/StarTours.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
             ],
-            "problemMatcher": "$tsc",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            "problemMatcher": "$msCompile"
         },
         {
             "label": "publish",
@@ -21,9 +19,11 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/ConsoleUI/ConsoleUI.csproj"
+                "${workspaceFolder}/StarTours.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
             ],
-            "problemMatcher": "$tsc"
+            "problemMatcher": "$msCompile"
         },
         {
             "label": "watch",
@@ -32,9 +32,10 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/ConsoleUI/ConsoleUI.csproj"
+                "--project",
+                "${workspaceFolder}/StarTours.csproj"
             ],
-            "problemMatcher": "$tsc"
+            "problemMatcher": "$msCompile"
         }
     ]
 }
