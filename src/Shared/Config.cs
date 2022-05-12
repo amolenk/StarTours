@@ -23,7 +23,13 @@ namespace StarTours.Shared
 
             public static class Gremlin
             {
-                public const string ConnectionString = "AccountEndpoint=https://cosmos-startours-gremlin.documents.azure.com:443/;AccountKey=JVgf4AdAxYmzEHUelxMBHxFvIKjSuZLTNJchGIuT8HCEM60Mk8GjOoeByBrVaUTrlO1ahvcyfQUS8emp9GFS5Q==;ApiKind=Gremlin;";
+                public const string HostName = "cosmos-startours-gremlin.gremlin.cosmos.azure.com";
+
+                public const string AuthorizationKey = "LBl0yT3APASISWAzuPZAVdy7OVxG6fDygdRRe558G3PbVwJz1eVpxnWHPBiBBk0Uu8drYfDKotTizokYrIPaNQ==";
+
+                public const string DatabaseId = "cosmos-startours-gremlin-db";
+
+                public const string GraphId = "flights";
             }
         }
     }

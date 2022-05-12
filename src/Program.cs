@@ -10,4 +10,5 @@
 //await new SC003B_FlightStatusProjection().RunAsync();
 // await new SC003C_LoadView().RunAsync();
 
-await new SC004A_FlightGraphProjection().RunAsync();
+// await new SC004A_SeedData().RunAsync();
+await new SC004B_FlightGraphProjection().RunAsync();

@@ -19,7 +19,7 @@ echo "Creating $account"
 az cosmosdb create \
     --name $account \
     --resource-group $resourceGroup \
-    --capabilities EnableGremlin \
+    --capabilities EnableGremlin EnableServerless \
     --default-consistency-level Eventual \
     --locations regionName="$location" failoverPriority=0 \
     --default-consistency-level "Session"
@@ -31,27 +31,6 @@ az cosmosdb gremlin database create \
     --resource-group $resourceGroup \
     --name $database
 
-# # Define the index policy for the graph, include spatial and composite indexes
-# printf ' 
-# {
-#     "indexingMode": "consistent", 
-#     "includedPaths": [
-#         {"path": "/*"}
-#     ],
-#     "excludedPaths": [
-#         { "path": "/headquarters/employees/?"}
-#     ],
-#     "spatialIndexes": [
-#         {"path": "/*", "types": ["Point"]}
-#     ],
-#     "compositeIndexes":[
-#         [
-#             { "path":"/name", "order":"ascending" },
-#             { "path":"/age", "order":"descending" }
-#         ]
-#     ]
-# }' > "idxpolicy-$randomIdentifier.json"
-
 # Create a Gremlin graph
 echo "Creating $graph"
 az cosmosdb gremlin graph create \
@@ -59,14 +38,4 @@ az cosmosdb gremlin graph create \
     --resource-group $resourceGroup \
     --database-name $database \
     --name $graph \
-    --throughput 400 \
     --partition-key-path "/partitionKey"
-
-# Clean up temporary index policy file
-#rm -f "idxpolicy-$randomIdentifier.json"
-
-# Printing connection string
-az cosmosdb keys list \
-    --name $account \
-    --resource-group $resourceGroup \
-    --type connection-strings

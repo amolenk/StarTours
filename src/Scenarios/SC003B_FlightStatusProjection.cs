@@ -6,9 +6,11 @@ using Newtonsoft.Json;
 
 namespace StarTours.Scenarios;
 
+// TODO Make separate scenario to demonstrate change feed.
+
 public class SC003B_FlightStatusProjection
 {
-    private const string EventTypeFormat = "StarTours.Domain.Events.{0}, Demo";
+    private const string EventTypeFormat = "StarTours.Domain.Events.{0}, StarTours";
     private const string PartitionKey = "flightStatus";
 
     private CosmosClient _client;
@@ -54,9 +56,9 @@ public class SC003B_FlightStatusProjection
 
         foreach (var eventDocument in flightEvents)
         {
-            var actualEvent = eventDocument.GetEvent(EventTypeFormat);
-
             Console.WriteLine("Got change: " + eventDocument.StreamId + "/" + eventDocument.Id);
+            
+            var actualEvent = eventDocument.GetEvent(EventTypeFormat);
 
             switch (actualEvent)
             {

@@ -11,7 +11,7 @@ public class SC002_CosmosEventStore
     public async Task RunAsync()
     {
         var eventStore = new CosmosEventStore(
-            "StarTours.Domain.Events.{0}, Demo",
+            "StarTours.Domain.Events.{0}, StarTours",
             Config.CosmosDb.ConnectionString,
             Config.CosmosDb.DatabaseId);
 
