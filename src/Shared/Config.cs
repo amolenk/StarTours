@@ -25,7 +25,7 @@ namespace StarTours.Shared
             {
                 public const string HostName = "cosmos-startours-gremlin.gremlin.cosmos.azure.com";
 
-                public const string AuthorizationKey = "LBl0yT3APASISWAzuPZAVdy7OVxG6fDygdRRe558G3PbVwJz1eVpxnWHPBiBBk0Uu8drYfDKotTizokYrIPaNQ==";
+                public static readonly string AuthorizationKey = Environment.GetEnvironmentVariable("STAR_TOURS_GREMLIN_AUTHKEY");
 
                 public const string DatabaseId = "cosmos-startours-gremlin-db";
 
