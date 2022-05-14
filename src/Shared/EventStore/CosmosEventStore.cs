@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Net;
 
 namespace StarTours.Shared.EventStore;
 
@@ -11,70 +12,76 @@ public class CosmosEventStore
     private readonly string _databaseId;
     private readonly string _containerId;
 
+    private readonly Container _container;
+
     public CosmosEventStore(
         string eventTypeFormat,
         string connectionString, 
         string databaseId,
-        string containerId = "events")
+        string containerId = "streams")
     {
         _eventTypeFormat = eventTypeFormat;
         _client = new CosmosClient(connectionString);
         _databaseId = databaseId;
         _containerId = containerId;
+
+        _container = _client.GetContainer(databaseId, containerId); 
     }
 
-    public async Task<IList<IEvent>> LoadStreamAsync(string streamId)
+    public async Task<bool> AppendToStreamAsync(
+        string streamId,
+        int expectedVersion,
+        IEnumerable<IEvent> events)
+    {
+        Container container = _client.GetContainer(_databaseId, _containerId);
+
+        return await container.Scripts.ExecuteStoredProcedureAsync<bool>(
+            "spAppendToStream",
+            new PartitionKey(streamId),
+            new dynamic[]
+            {
+                streamId,
+                expectedVersion,
+                SerializeEvents(streamId, expectedVersion, events)
+            });
+    }
+
+    public async Task<IList<IEvent>> LoadStreamAsync(
+        string streamId,
+        int minVersion = int.MinValue,
+        int maxVersion = int.MaxValue)
     {
         Container container = _client.GetContainer(_databaseId, _containerId);
 
         var sqlQueryText = "SELECT e.type, e.data FROM events e"
-            + " WHERE e.id <> 'version' AND e.stream = @streamId"
+            + " WHERE e.streamId = @streamId"
+                + " AND e.version >= @minVersion"
+                + " AND e.version <= @maxVersion"
+                + " AND e.id <> 'version'"
             + " ORDER BY e.version";
 
-        QueryDefinition queryDefinition = new QueryDefinition(sqlQueryText)
-            .WithParameter("@streamId", streamId);
+        var queryDefinition = new QueryDefinition(sqlQueryText)
+            .WithParameter("@streamId", streamId)
+            .WithParameter("@minVersion", minVersion)
+            .WithParameter("@maxVersion", maxVersion);
 
         var events = new List<IEvent>();
 
-        var sw = Stopwatch.StartNew();
-        double ru = -1;
-
-        FeedIterator<EventDocument> feedIterator = container.GetItemQueryIterator<EventDocument>(
+        var feedIterator = container.GetItemQueryIterator<EventDocument>(
             queryDefinition,
             requestOptions: new QueryRequestOptions() { PartitionKey = new PartitionKey(streamId) });
 
         while (feedIterator.HasMoreResults)
         {
-            FeedResponse<EventDocument> feedResponse = await feedIterator.ReadNextAsync();
-            ru = feedResponse.RequestCharge;
+            var feedResponse = await feedIterator.ReadNextAsync();
 
             foreach (var eventDocument in feedResponse)
             {
-                //events.Add(eventDocument.GetEvent(_eventTypeFormat));
+                events.Add(eventDocument.Deserialize(_eventTypeFormat));
             }
         }
 
-        var elapsted = sw.ElapsedMilliseconds;
-
-        Console.WriteLine(ru.ToString());
-        Console.WriteLine(elapsted);
         return events;
-    }
-
-    public async Task<bool> AppendToStreamAsync(string streamId, int expectedVersion, IEnumerable<IEvent> events)
-    {
-        Container container = _client.GetContainer(_databaseId, _containerId);
-
-        PartitionKey partitionKey = new PartitionKey(streamId);
-
-        dynamic[] parameters = new dynamic[]
-        {
-            streamId,
-            expectedVersion,
-            SerializeEvents(streamId, expectedVersion, events)
-        };
-
-        return await container.Scripts.ExecuteStoredProcedureAsync<bool>("spAppendToStream", partitionKey, parameters);
     }
 
     private static string SerializeEvents(string streamId, int expectedVersion, IEnumerable<IEvent> events)
@@ -83,4 +90,36 @@ public class CosmosEventStore
 
         return JsonConvert.SerializeObject(eventEnvelopes);
     }
+
+    #region Snapshots
+
+    public async Task SaveSnapshotAsync(string streamId, int version, object snapshot)
+    {
+        var response = await _container.UpsertItemAsync(
+            SnapshotDocument.Create(streamId, version, snapshot),
+            new PartitionKey(streamId));
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            throw new Exception("Failed to save snapshot. Got result: " + response.StatusCode);
+        }
+    }
+
+    public async Task<(T Snapshot, int Version)> LoadSnapshotAsync<T>(string streamId)
+    {
+        var response = await _container.ReadItemAsync<SnapshotDocument>(
+            "snapshot",
+            new PartitionKey(streamId));
+
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            return (
+                response.Resource.Deserialize<T>(),
+                response.Resource.Version);
+        }
+
+        return (default(T), 0);
+    }
+
+    #endregion
 }

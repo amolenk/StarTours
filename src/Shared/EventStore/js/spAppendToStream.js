@@ -23,7 +23,7 @@
         var versionDocument =
         {
             id: "version",
-            stream: streamId,
+            streamId: streamId,
             version: newVersion
         };
 
@@ -47,7 +47,7 @@
     function tryUpdateVersionDocument(onCompletedCallback) {
 
         var isAccepted = __.filter(
-            function (x) { return x.id === "version" && x.stream === streamId },
+            function (x) { return x.id === "version" && x.streamId === streamId },
             function (err, results, options) {
                 if (err) throw err;
 

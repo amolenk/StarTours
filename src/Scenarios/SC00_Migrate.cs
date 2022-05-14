@@ -1,12 +1,48 @@
-﻿using Gremlin.Net.Driver;
-using StarTours.Shared;
+﻿using StarTours.Shared;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Azure.Cosmos.Scripts;
+using System.Net;
 using StarTours.Shared.Gremlin;
+using Gremlin.Net.Driver;
 
 namespace StarTours.Scenarios;
 
-public class SC004A_SeedData
+public class SC00_Migrate 
 {
-    public async Task RunAsync()
+    public Task RunAsync() => Task.WhenAll(
+        MigrateSqlAsync(),
+        MigrateGremlinAsync());
+
+    public async Task MigrateSqlAsync()
+    {
+        CosmosClient client = new CosmosClient(Config.CosmosDb.ConnectionString);
+
+        await client.CreateDatabaseIfNotExistsAsync(Config.CosmosDb.DatabaseId, ThroughputProperties.CreateManualThroughput(400));
+        Database database = client.GetDatabase(Config.CosmosDb.DatabaseId);
+
+        await database.DefineContainer(Config.CosmosDb.Containers.Streams, "/streamId").CreateIfNotExistsAsync();
+//            await database.DefineContainer("views", "/partitionKey").CreateIfNotExistsAsync();
+        await database.DefineContainer(Config.CosmosDb.Containers.Leases, "/id").CreateIfNotExistsAsync();
+
+        StoredProcedureProperties storedProcedureProperties = new StoredProcedureProperties
+        {
+            Id = "spAppendToStream",
+            Body = File.ReadAllText("Shared/EventStore/js/spAppendToStream.js")
+        };
+
+        Container streamsContainer = database.GetContainer(Config.CosmosDb.Containers.Streams);
+        try
+        {
+            await streamsContainer.Scripts.DeleteStoredProcedureAsync("spAppendToStream");
+        }
+        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            // Stored procedure didn't exist yet.
+        }
+        await streamsContainer.Scripts.CreateStoredProcedureAsync(storedProcedureProperties);
+    }
+
+    public async Task MigrateGremlinAsync()
     {
         using var gremlinClient = GremlinClientFactory.CreateClient(
             Config.CosmosDb.Gremlin.HostName,

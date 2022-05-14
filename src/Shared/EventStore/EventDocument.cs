@@ -8,7 +8,7 @@ public class EventDocument
     [JsonProperty("id")]
     public string Id { get; set; }
 
-    [JsonProperty("stream")]
+    [JsonProperty("streamId")]
     public string StreamId { get; set; }
 
     [JsonProperty("version")]
@@ -20,16 +20,17 @@ public class EventDocument
     [JsonProperty("data")]
     public JObject EventData { get; set; }
 
-    public static EventDocument Create(string streamId, int version, IEvent @event) => new EventDocument
-    {
-        Id = $"event:{version}",
-        StreamId = streamId,
-        Version = version,
-        EventType = @event.GetType().Name,
-        EventData = JObject.FromObject(@event)
-    };
+    public static EventDocument Create(string streamId, int version, IEvent @event)
+        => new EventDocument
+        {
+            Id = $"event:{version}",
+            StreamId = streamId,
+            Version = version,
+            EventType = @event.GetType().Name,
+            EventData = JObject.FromObject(@event)
+        };
 
-    public IEvent GetEvent(string eventTypeFormat)
+    public IEvent Deserialize(string eventTypeFormat)
     {
         var eventTypeName = string.Format(eventTypeFormat, EventType);
         var eventType = Type.GetType(eventTypeName, true);

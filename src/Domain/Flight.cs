@@ -5,8 +5,7 @@ namespace StarTours.Domain
 {
     public class Flight
     {
-        private List<FlightLeg> _legs;
-        private bool _isCanceled;
+        private List<FlightLeg> _route = new();
 
         public string FlightNumber { get; private set; }
 
@@ -14,7 +13,9 @@ namespace StarTours.Domain
 
         public string DestinationId { get; private set; }
 
-        public IReadOnlyCollection<FlightLeg> Legs => _legs.AsReadOnly();
+        public bool IsCanceled { get; private set; }
+
+        public IReadOnlyCollection<FlightLeg> Route => _route.AsReadOnly();
 
         internal int Version = 0;
 
@@ -35,18 +36,18 @@ namespace StarTours.Domain
             // Replay events to get current state.
             foreach (var @event in events)
             { 
-                ApplyEvent(@event, true);
+                ApplyEvent(@event, isReplay: true);
             }
         }
 
         public void AssignRoute(IEnumerable<FlightLeg> route)
         {
-            if (_isCanceled)
+            if (IsCanceled)
             {
                 throw new ArgumentException("Cannot assign a route to a canceled flight.");
             }
 
-            if (_legs is not null)
+            if (_route.Any())
             {
                 throw new ArgumentException("Flight already has a planned route.");
             }
@@ -60,12 +61,12 @@ namespace StarTours.Domain
 
         public void Divert(IEnumerable<FlightLeg> newRoute)
         {
-            if (_isCanceled)
+            if (IsCanceled)
             {
                 throw new ArgumentException("Cannot divert a canceled flight.");
             }
 
-            if (_legs is null)
+            if (!_route.Any())
             {
                 throw new ArgumentException("Cannot divert a flight that doesn't have a route assigned.");
             }
@@ -73,6 +74,7 @@ namespace StarTours.Domain
             ApplyEvent(new FlightDiverted
             {
                 FlightNumber = FlightNumber,
+                OriginId = OriginId,
                 NewDestinationId = newRoute.Last().DestinationId
             });
 
@@ -93,6 +95,15 @@ namespace StarTours.Domain
 
         private void ApplyEvent(IEvent @event, bool isReplay = false)
         {
+            if (isReplay)
+            {
+                Version++;
+            }
+            else
+            {
+                PendingChanges.Add(@event);
+            }
+
             switch (@event)
             {
                 case FlightScheduled flightScheduled:
@@ -111,15 +122,6 @@ namespace StarTours.Domain
                     HandleEvent(flightCanceled);
                     break;
             }
-
-            if (isReplay)
-            {
-                Version++;
-            }
-            else
-            {
-                PendingChanges.Add(@event);
-            }
         }
 
         private void HandleEvent(FlightScheduled flightScheduled)
@@ -131,19 +133,53 @@ namespace StarTours.Domain
 
         private void HandleEvent(FlightDiverted flightDiverted)
         {
+            _route.Clear();
             DestinationId = flightDiverted.NewDestinationId;
-            _legs = null;
         }
 
         private void HandleEvent(FlightRouteAssigned flightRouteAssigned)
         {
-            _legs = flightRouteAssigned.Legs;
+            _route.AddRange(flightRouteAssigned.Legs);
         }
 
         private void HandleEvent(FlightCanceled _)
         {
-            _legs = null;
-            _isCanceled = true;
+            _route.Clear();
+            IsCanceled = true;
         }
+
+        #region Snapshots
+
+        public record Snapshot(
+            string FlightNumber,
+            string OriginId,
+            string DestinationId,
+            List<FlightLeg> Route,
+            bool IsCanceled);
+
+        public Flight(Snapshot snapshot, int snapshotVersion, IEnumerable<IEvent> events)
+        {
+            FlightNumber = snapshot.FlightNumber;
+            OriginId = snapshot.OriginId;
+            DestinationId = snapshot.DestinationId;
+            IsCanceled = snapshot.IsCanceled;
+            _route = snapshot.Route;
+            Version = snapshotVersion;
+
+            // Replay events to get current state.
+            foreach (var @event in events)
+            { 
+                ApplyEvent(@event, isReplay: true);
+            }
+        }
+
+        public Snapshot CreateSnapshot() => new Snapshot(
+            FlightNumber,
+            OriginId,
+            DestinationId,
+            _route,
+            IsCanceled);
+
+        #endregion
     }
 }

@@ -33,6 +33,8 @@ public static class GremlinClientFactory
                 options.KeepAliveInterval = TimeSpan.FromSeconds(10);
             });
 
+        // For Azure Cosmos DB Gremlin API as of November 2021,
+        // it needs to use GraphSON v2.
         return new GremlinClient(
             gremlinServer, 
             new GraphSON2Reader(), 

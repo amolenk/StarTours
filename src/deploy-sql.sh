@@ -3,10 +3,10 @@
 # Variable block
 location="West Europe"
 resourceGroup="StarToursDemos"
-account="cosmosdb-star-tours"
-database="cosmosdb-star-tours-db"
-container="events"
-partitionKey="/stream"
+account="cosmos-startours-sql"
+database="cosmos-startours-sql-db"
+container="streams"
+partitionKey="/streamId"
 
 # Create a resource group
 echo "Creating $resourceGroup in $location..."

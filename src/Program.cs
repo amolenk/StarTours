@@ -1,14 +1,36 @@
 ﻿using StarTours.Scenarios;
 
-//await new SC000_Migrate().RunAsync();
+switch (args[0])
+{
+    case "migrate":
+        await new SC00_Migrate().RunAsync();
+        break;
 
-//new SC001_FlightAggregate().Run();
+    case "aggregate":
+        new SC01_FlightAggregate().Run();
+        break;
 
-//await new SC002_CosmosEventStore().RunAsync();
+    case "eventstore":
+        await new SC02_CosmosEventStore().RunAsync();
+        break;
 
-//await new SC003A_SeedData().RunAsync();
-//await new SC003B_FlightStatusProjection().RunAsync();
-// await new SC003C_LoadView().RunAsync();
+    case "seed":
+        await new SC03A_SeedFlights().RunAsync();
+        break;
 
-// await new SC004A_SeedData().RunAsync();
-await new SC004B_FlightGraphProjection().RunAsync();
+    case "graphproc":
+        await new SC03B_FlightGraphProjection().RunAsync();
+        break;
+
+    case "snapshotproc":
+        await new SC04A_SnapshotProcessor().RunAsync();
+        break;
+
+    case "snapshottrigger":
+        await new SC04B_SnapshotTrigger().RunAsync();
+        break;
+
+    case "snapshotload":
+        await new SC04C_SnapshotLoad().RunAsync();
+        break;
+}
