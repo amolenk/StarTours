@@ -6,18 +6,14 @@ namespace StarTours.Scenarios;
 
 public class SC03A_SeedFlights
 {
-    private readonly CosmosEventStore _eventStore;
-
-    public SC03A_SeedFlights()
-    {
-        _eventStore = new CosmosEventStore(
-            "StarTours.Domain.Events.{0}, StarTours",
-            Config.CosmosDb.ConnectionString,
-            Config.CosmosDb.DatabaseId);
-    }
-
     public async Task RunAsync()
     {
+        var eventStore = new CosmosEventStore(
+            "StarTours.Domain.Events.{0}, StarTours",
+            Config.CosmosDb.Sql.HostName,
+            Config.CosmosDb.Sql.AuthorizationKey,
+            Config.CosmosDb.Sql.DatabaseId);
+
         var flights = new List<Flight>
         {
             new Flight("42", "thx1138", "naboo"),
@@ -52,7 +48,7 @@ public class SC03A_SeedFlights
 
         foreach (var flight in flights)
         {
-            await _eventStore.AppendToStreamAsync(
+            await eventStore.AppendToStreamAsync(
                 $"flight:{flight.FlightNumber}",
                 flight.Version,
                 flight.PendingChanges);

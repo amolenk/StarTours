@@ -13,21 +13,22 @@ public class SC04A_SnapshotProcessor
     {
         _eventStore = new CosmosEventStore(
             "StarTours.Domain.Events.{0}, StarTours",
-            Config.CosmosDb.ConnectionString,
-            Config.CosmosDb.DatabaseId);
+            Config.CosmosDb.Sql.HostName,
+            Config.CosmosDb.Sql.AuthorizationKey,
+            Config.CosmosDb.Sql.DatabaseId);
     }
 
     public async Task RunAsync()
     {
-        var cosmosClient = new CosmosClient(Config.CosmosDb.ConnectionString);
+        var cosmosClient = new CosmosClient(Config.CosmosDb.Sql.HostName, Config.CosmosDb.Sql.AuthorizationKey);
 
         var monitorContainer = cosmosClient.GetContainer(
-            Config.CosmosDb.DatabaseId,
-            Config.CosmosDb.Containers.Streams);
+            Config.CosmosDb.Sql.DatabaseId,
+            Config.CosmosDb.Sql.Containers.Streams);
 
         var leaseContainer = cosmosClient.GetContainer(
-            Config.CosmosDb.DatabaseId,
-            Config.CosmosDb.Containers.Leases);
+            Config.CosmosDb.Sql.DatabaseId,
+            Config.CosmosDb.Sql.Containers.Leases);
 
         var processor = monitorContainer
             .GetChangeFeedProcessorBuilder<EventDocument>("SnapshotProcessor", HandleChangesAsync)

@@ -1,6 +1,5 @@
 ﻿using StarTours.Shared;
 using StarTours.Shared.EventStore;
-using Microsoft.Azure.Cosmos;
 using StarTours.Domain;
 
 namespace StarTours.Scenarios;
@@ -13,8 +12,9 @@ public class SC04B_SnapshotTrigger
     {
         _eventStore = new CosmosEventStore(
             "StarTours.Domain.Events.{0}, StarTours",
-            Config.CosmosDb.ConnectionString,
-            Config.CosmosDb.DatabaseId);
+            Config.CosmosDb.Sql.HostName,
+            Config.CosmosDb.Sql.AuthorizationKey,
+            Config.CosmosDb.Sql.DatabaseId);
     }
 
     public async Task RunAsync()

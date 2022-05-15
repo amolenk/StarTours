@@ -12,26 +12,27 @@ public class SC04C_SnapshotLoad
     {
         _eventStore = new CosmosEventStore(
             "StarTours.Domain.Events.{0}, StarTours",
-            Config.CosmosDb.ConnectionString,
-            Config.CosmosDb.DatabaseId);
+            Config.CosmosDb.Sql.HostName,
+            Config.CosmosDb.Sql.AuthorizationKey,
+            Config.CosmosDb.Sql.DatabaseId);
     }
 
     public async Task RunAsync()
     {
         var streamId = "flight:815";
 
-        var (snapshot, version) = await _eventStore.LoadSnapshotAsync<Flight.Snapshot>(
+        var (snapshot, snapshotVersion) = await _eventStore.LoadSnapshotAsync<Flight.Snapshot>(
             streamId);
 
-        Console.WriteLine($"Found snapshot for version {version}.");
+        Console.WriteLine($"Found snapshot for version {snapshotVersion}.");
 
         var events = await _eventStore.LoadStreamAsync(
             streamId,
-            minVersion: version + 1);
+            minVersion: snapshotVersion + 1);
 
         Console.WriteLine($"Found {events.Count} additional events.");
 
-        var flight = new Flight(snapshot, version, events);
+        var flight = new Flight(snapshot, snapshotVersion, events);
 
         Console.WriteLine("CURRENT FLIGHT STATUS:");
         Console.WriteLine($"Version     = {flight.Version}");

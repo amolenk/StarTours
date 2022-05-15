@@ -10,8 +10,9 @@ public class SC02_CosmosEventStore
     {
         var eventStore = new CosmosEventStore(
             "StarTours.Domain.Events.{0}, StarTours",
-            Config.CosmosDb.ConnectionString,
-            Config.CosmosDb.DatabaseId);
+            Config.CosmosDb.Sql.HostName,
+            Config.CosmosDb.Sql.AuthorizationKey,
+            Config.CosmosDb.Sql.DatabaseId);
 
         // Schedule a new flight.
         var flight = new Flight("1401", "thx1138", "coruscant");

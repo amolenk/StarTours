@@ -5,8 +5,6 @@ location="West Europe"
 resourceGroup="StarToursDemos"
 account="cosmos-startours-sql"
 database="cosmos-startours-sql-db"
-container="streams"
-partitionKey="/streamId"
 
 # Create a resource group
 echo "Creating $resourceGroup in $location..."
@@ -30,16 +28,6 @@ az cosmosdb sql database create \
     --account-name $account \
     --resource-group $resourceGroup \
     --name $database
-
-# Create a SQL API container
-echo "Creating $container"
-az cosmosdb sql container create \
-    --account-name $account \
-    --resource-group $resourceGroup \
-    --database-name $database \
-    --name $container \
-    --partition-key-path $partitionKey \
-    --throughput 400
 
 # Printing connection string
 az cosmosdb keys list \

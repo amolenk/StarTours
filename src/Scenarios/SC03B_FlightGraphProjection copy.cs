@@ -13,18 +13,18 @@ public class SC03B_FlightGraphProjection
 
     public async Task RunAsync()
     {
-        var cosmosClient = new CosmosClient(Config.CosmosDb.ConnectionString);
+        var cosmosClient = new CosmosClient(Config.CosmosDb.Sql.HostName, Config.CosmosDb.Sql.AuthorizationKey);
 
         var monitorContainer = cosmosClient.GetContainer(
-            Config.CosmosDb.DatabaseId,
-            Config.CosmosDb.Containers.Streams);
+            Config.CosmosDb.Sql.DatabaseId,
+            Config.CosmosDb.Sql.Containers.Streams);
 
         var leaseContainer = cosmosClient.GetContainer(
-            Config.CosmosDb.DatabaseId,
-            Config.CosmosDb.Containers.Leases);
+            Config.CosmosDb.Sql.DatabaseId,
+            Config.CosmosDb.Sql.Containers.Leases);
 
         var processor = monitorContainer
-            .GetChangeFeedProcessorBuilder<EventDocument>("GraphProjection3", HandleChangesAsync)
+            .GetChangeFeedProcessorBuilder<EventDocument>("GraphProjection", HandleChangesAsync)
             .WithInstanceName("local-worker")
             .WithLeaseContainer(leaseContainer)
             .WithStartTime(DateTime.MinValue.ToUniversalTime())
@@ -113,7 +113,7 @@ public class SC03B_FlightGraphProjection
         FlightDiverted flightDiverted,
         GremlinClient client)
     {
-        await DeleteFlight(flightDiverted.FlightNumber, client);
+        await DeleteIfExistsFlight(flightDiverted.FlightNumber, client);
 
         await UpsertFlight(
             flightDiverted.FlightNumber,
@@ -126,7 +126,7 @@ public class SC03B_FlightGraphProjection
         FlightCanceled flightCanceled,
         GremlinClient client)
     {
-        await DeleteFlight(flightCanceled.FlightNumber, client);
+        await DeleteIfExistsFlight(flightCanceled.FlightNumber, client);
     }
 
     private async Task UpsertFlight(
@@ -144,7 +144,7 @@ public class SC03B_FlightGraphProjection
         await client.SubmitAsync(request);
     }
 
-    private async Task DeleteFlight(string flightNumber, GremlinClient client)
+    private async Task DeleteIfExistsFlight(string flightNumber, GremlinClient client)
     {
         var request = $"g.E().hasLabel('{flightNumber}').drop()";
         

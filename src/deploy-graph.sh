@@ -6,7 +6,6 @@ resourceGroup="StarToursDemos"
 account="cosmos-startours-gremlin"
 database="cosmos-startours-gremlin-db"
 graph="flights"
-#partitionKey="/stream"
 
 # Create a resource group
 echo "Creating $resourceGroup in $location..."

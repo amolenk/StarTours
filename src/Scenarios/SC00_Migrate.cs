@@ -15,14 +15,13 @@ public class SC00_Migrate
 
     public async Task MigrateSqlAsync()
     {
-        CosmosClient client = new CosmosClient(Config.CosmosDb.ConnectionString);
+        CosmosClient client = new CosmosClient(Config.CosmosDb.Sql.HostName, Config.CosmosDb.Sql.AuthorizationKey);
 
-        await client.CreateDatabaseIfNotExistsAsync(Config.CosmosDb.DatabaseId, ThroughputProperties.CreateManualThroughput(400));
-        Database database = client.GetDatabase(Config.CosmosDb.DatabaseId);
+        await client.CreateDatabaseIfNotExistsAsync(Config.CosmosDb.Sql.DatabaseId, ThroughputProperties.CreateManualThroughput(400));
+        Database database = client.GetDatabase(Config.CosmosDb.Sql.DatabaseId);
 
-        await database.DefineContainer(Config.CosmosDb.Containers.Streams, "/streamId").CreateIfNotExistsAsync();
-//            await database.DefineContainer("views", "/partitionKey").CreateIfNotExistsAsync();
-        await database.DefineContainer(Config.CosmosDb.Containers.Leases, "/id").CreateIfNotExistsAsync();
+        await database.DefineContainer(Config.CosmosDb.Sql.Containers.Streams, "/streamId").CreateIfNotExistsAsync();
+        await database.DefineContainer(Config.CosmosDb.Sql.Containers.Leases, "/id").CreateIfNotExistsAsync();
 
         StoredProcedureProperties storedProcedureProperties = new StoredProcedureProperties
         {
@@ -30,7 +29,7 @@ public class SC00_Migrate
             Body = File.ReadAllText("Shared/EventStore/js/spAppendToStream.js")
         };
 
-        Container streamsContainer = database.GetContainer(Config.CosmosDb.Containers.Streams);
+        Container streamsContainer = database.GetContainer(Config.CosmosDb.Sql.Containers.Streams);
         try
         {
             await streamsContainer.Scripts.DeleteStoredProcedureAsync("spAppendToStream");

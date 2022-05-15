@@ -1,6 +1,5 @@
 ﻿using Microsoft.Azure.Cosmos;
 using Newtonsoft.Json;
-using System.Diagnostics;
 using System.Net;
 
 namespace StarTours.Shared.EventStore;
@@ -9,22 +8,17 @@ public class CosmosEventStore
 {
     private readonly string _eventTypeFormat;
     private readonly CosmosClient _client;
-    private readonly string _databaseId;
-    private readonly string _containerId;
-
     private readonly Container _container;
 
     public CosmosEventStore(
         string eventTypeFormat,
-        string connectionString, 
+        string hostName,
+        string authorizationKey, 
         string databaseId,
         string containerId = "streams")
     {
         _eventTypeFormat = eventTypeFormat;
-        _client = new CosmosClient(connectionString);
-        _databaseId = databaseId;
-        _containerId = containerId;
-
+        _client = new CosmosClient(hostName, authorizationKey);
         _container = _client.GetContainer(databaseId, containerId); 
     }
 
@@ -33,9 +27,7 @@ public class CosmosEventStore
         int expectedVersion,
         IEnumerable<IEvent> events)
     {
-        Container container = _client.GetContainer(_databaseId, _containerId);
-
-        return await container.Scripts.ExecuteStoredProcedureAsync<bool>(
+        return await _container.Scripts.ExecuteStoredProcedureAsync<bool>(
             "spAppendToStream",
             new PartitionKey(streamId),
             new dynamic[]
@@ -51,8 +43,6 @@ public class CosmosEventStore
         int minVersion = int.MinValue,
         int maxVersion = int.MaxValue)
     {
-        Container container = _client.GetContainer(_databaseId, _containerId);
-
         var sqlQueryText = "SELECT e.type, e.data FROM events e"
             + " WHERE e.streamId = @streamId"
                 + " AND e.version >= @minVersion"
@@ -67,7 +57,7 @@ public class CosmosEventStore
 
         var events = new List<IEvent>();
 
-        var feedIterator = container.GetItemQueryIterator<EventDocument>(
+        var feedIterator = _container.GetItemQueryIterator<EventDocument>(
             queryDefinition,
             requestOptions: new QueryRequestOptions() { PartitionKey = new PartitionKey(streamId) });
 
