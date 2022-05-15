@@ -14,16 +14,16 @@ public class SnapshotDocument
     [JsonProperty("version")]
     public int Version { get; set; }
 
-    [JsonProperty("data")]
-    public JObject SnapshotData { get; set; }
+    [JsonProperty("state")]
+    public JObject State { get; set; }
 
     public static SnapshotDocument Create(string streamId, int version, object snapshot)
         => new SnapshotDocument
         {
             StreamId = streamId,
             Version = version,
-            SnapshotData = JObject.FromObject(snapshot)
+            State = JObject.FromObject(snapshot)
         };
 
-    public T Deserialize<T>() => SnapshotData.ToObject<T>();
+    public T Deserialize<T>() => State.ToObject<T>();
 }
