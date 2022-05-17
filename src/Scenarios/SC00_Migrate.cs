@@ -15,7 +15,7 @@ public class SC00_Migrate
 
     public async Task MigrateSqlAsync()
     {
-        CosmosClient client = new CosmosClient(Config.CosmosDb.Sql.HostName, Config.CosmosDb.Sql.AuthorizationKey);
+        CosmosClient client = new CosmosClient(Config.CosmosDb.Sql.Endpoint, Config.CosmosDb.Sql.AuthorizationKey);
 
         await client.CreateDatabaseIfNotExistsAsync(Config.CosmosDb.Sql.DatabaseId, ThroughputProperties.CreateManualThroughput(400));
         Database database = client.GetDatabase(Config.CosmosDb.Sql.DatabaseId);

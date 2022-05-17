@@ -12,13 +12,13 @@ public class CosmosEventStore
 
     public CosmosEventStore(
         string eventTypeFormat,
-        string hostName,
+        string endpoint,
         string authorizationKey, 
         string databaseId,
         string containerId = "streams")
     {
         _eventTypeFormat = eventTypeFormat;
-        _client = new CosmosClient(hostName, authorizationKey);
+        _client = new CosmosClient(endpoint, authorizationKey);
         _container = _client.GetContainer(databaseId, containerId); 
     }
 

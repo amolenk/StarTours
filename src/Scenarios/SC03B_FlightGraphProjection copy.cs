@@ -13,7 +13,7 @@ public class SC03B_FlightGraphProjection
 
     public async Task RunAsync()
     {
-        var cosmosClient = new CosmosClient(Config.CosmosDb.Sql.HostName, Config.CosmosDb.Sql.AuthorizationKey);
+        var cosmosClient = new CosmosClient(Config.CosmosDb.Sql.Endpoint, Config.CosmosDb.Sql.AuthorizationKey);
 
         var monitorContainer = cosmosClient.GetContainer(
             Config.CosmosDb.Sql.DatabaseId,

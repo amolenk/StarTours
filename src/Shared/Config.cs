@@ -6,7 +6,7 @@ public static class Config
     {
         public static class Sql
         {
-            public const string HostName = "cosmos-startours-sql.documents.azure.com";
+            public const string Endpoint = "https://cosmos-startours-sql.documents.azure.com:443/";
 
             public static readonly string AuthorizationKey = Environment.GetEnvironmentVariable("STAR_TOURS_SQL_AUTHKEY");
 

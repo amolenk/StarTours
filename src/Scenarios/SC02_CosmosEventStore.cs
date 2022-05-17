@@ -10,7 +10,7 @@ public class SC02_CosmosEventStore
     {
         var eventStore = new CosmosEventStore(
             "StarTours.Domain.Events.{0}, StarTours",
-            Config.CosmosDb.Sql.HostName,
+            Config.CosmosDb.Sql.Endpoint,
             Config.CosmosDb.Sql.AuthorizationKey,
             Config.CosmosDb.Sql.DatabaseId);
 
