@@ -48,10 +48,10 @@ public class SC04A_SnapshotProcessor
     }
 
     private async Task HandleChangesAsync(
-        IReadOnlyCollection<EventDocument> events,
+        IReadOnlyCollection<EventDocument> changes,
         CancellationToken cancellationToken)
     {
-        var flightEvents = events.Where(doc =>
+        var flightEvents = changes.Where(doc =>
             doc.StreamId.StartsWith("flight:") &&
             doc.Id.StartsWith("event:") &&
             doc.Version % 10 == 0);
