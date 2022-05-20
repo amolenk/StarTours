@@ -27,15 +27,67 @@ public class CosmosEventStore
         int expectedVersion,
         IEnumerable<IEvent> events)
     {
-        return await _container.Scripts.ExecuteStoredProcedureAsync<bool>(
-            "spAppendToStream",
-            new PartitionKey(streamId),
-            new dynamic[]
+        var partitionKey = new PartitionKey(streamId);
+
+        var batch = _container.CreateTransactionalBatch(partitionKey);
+
+        var newVersion = expectedVersion + events.Count();
+
+        if (expectedVersion == 0)
+        {
+            batch.CreateItem(VersionDocument.Create(streamId, newVersion));
+        }
+        else
+        {
+            ItemResponse<VersionDocument> versionDocumentResponse;
+
+            try
             {
-                streamId,
-                expectedVersion,
-                SerializeEvents(streamId, expectedVersion, events)
-            });
+                versionDocumentResponse = await _container.ReadItemAsync<VersionDocument>(
+                    "version", partitionKey);
+
+                if (versionDocumentResponse.Resource.Version != expectedVersion)
+                {
+                    // Version in the database is different.
+                    return false;
+                }
+            }
+            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                // Version in the database does not exist, so cannot match
+                // expected version.
+                return false;
+            }
+
+            batch.ReplaceItem(
+                "version",
+                VersionDocument.Create(streamId, newVersion),
+                new TransactionalBatchItemRequestOptions
+                {
+                    IfMatchEtag = versionDocumentResponse.ETag
+                });
+        }
+
+        foreach (var @event in events)
+        {
+            batch.CreateItem(
+                EventDocument.Create(streamId, ++expectedVersion, @event));
+        }
+
+        var batchResult = await batch.ExecuteAsync();
+
+        if (batchResult.IsSuccessStatusCode)
+        {
+            return true;
+        }
+        else if (batchResult.StatusCode == HttpStatusCode.Conflict)
+        {
+            return false;
+        }
+        else
+        {
+            throw new Exception("Got status code: " + batchResult.StatusCode);
+        }
     }
 
     public async Task<IList<IEvent>> LoadStreamAsync(
