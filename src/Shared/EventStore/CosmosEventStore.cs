@@ -28,7 +28,6 @@ public class CosmosEventStore
         IEnumerable<IEvent> events)
     {
         var partitionKey = new PartitionKey(streamId);
-
         var batch = _container.CreateTransactionalBatch(partitionKey);
 
         var newVersion = expectedVersion + events.Count();
@@ -54,8 +53,7 @@ public class CosmosEventStore
             }
             catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
             {
-                // Version in the database does not exist, so cannot match
-                // expected version.
+                // Version in the database does not exist, so cannot match.
                 return false;
             }
 

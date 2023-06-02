@@ -114,8 +114,8 @@ namespace StarTours.Domain
                     HandleEvent(flightDiverted);
                     break;
 
-                case FlightRouteAssigned flightLegAssigned:
-                    HandleEvent(flightLegAssigned);
+                case FlightRouteAssigned flightRouteAssigned:
+                    HandleEvent(flightRouteAssigned);
                     break;
 
                 case FlightCanceled flightCanceled:

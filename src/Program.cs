@@ -33,4 +33,8 @@ switch (args[0])
     case "snapshotload":
         await new SC04C_SnapshotLoad().RunAsync();
         break;
+
+    case "append":
+        await new SC05_AppendStream().RunAsync();
+        break;
 }

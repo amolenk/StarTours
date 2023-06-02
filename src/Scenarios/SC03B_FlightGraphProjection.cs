@@ -24,7 +24,7 @@ public class SC03B_FlightGraphProjection
             Config.CosmosDb.Sql.Containers.Leases);
 
         var processor = monitorContainer
-            .GetChangeFeedProcessorBuilder<EventDocument>("GraphProjection", HandleChangesAsync)
+            .GetChangeFeedProcessorBuilder<EventDocument>("GraphProjection", RunProjectionAsync)
             .WithInstanceName("local-worker")
             .WithLeaseContainer(leaseContainer)
             .WithStartTime(DateTime.MinValue.ToUniversalTime())
@@ -40,7 +40,7 @@ public class SC03B_FlightGraphProjection
         await processor.StopAsync();
     }
 
-    private async Task HandleChangesAsync(
+    private async Task RunProjectionAsync(
         IReadOnlyCollection<EventDocument> changes,
         CancellationToken cancellationToken)
     {
@@ -65,15 +65,15 @@ public class SC03B_FlightGraphProjection
                 switch (actualEvent)
                 {
                     case FlightScheduled flightScheduled:
-                        await HandleEventAsync(flightScheduled, gremlinClient);
+                        await ProjectEventAsync(flightScheduled, gremlinClient);
                         break;
 
                     case FlightDiverted flightDiverted:
-                        await HandleEventAsync(flightDiverted, gremlinClient);
+                        await ProjectEventAsync(flightDiverted, gremlinClient);
                         break;
 
                     case FlightCanceled flightCanceled:
-                        await HandleEventAsync(flightCanceled, gremlinClient);
+                        await ProjectEventAsync(flightCanceled, gremlinClient);
                         break;
                 }
             }
@@ -98,7 +98,7 @@ public class SC03B_FlightGraphProjection
         return Task.CompletedTask;
     }
 
-    private async Task HandleEventAsync(
+    private async Task ProjectEventAsync(
         FlightScheduled flightScheduled,
         GremlinClient client)
     {
@@ -109,7 +109,7 @@ public class SC03B_FlightGraphProjection
             client);
     }
 
-    private async Task HandleEventAsync(
+    private async Task ProjectEventAsync(
         FlightDiverted flightDiverted,
         GremlinClient client)
     {
@@ -122,7 +122,7 @@ public class SC03B_FlightGraphProjection
             client);
     }
 
-    private async Task HandleEventAsync(
+    private async Task ProjectEventAsync(
         FlightCanceled flightCanceled,
         GremlinClient client)
     {
