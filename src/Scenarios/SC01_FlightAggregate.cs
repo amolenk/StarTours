@@ -15,7 +15,7 @@ public class SC01_FlightAggregate
         // Get the events from the aggregate.
         var events = flight.PendingChanges;
 
-        Console.WriteLine("EVENTS:");
+        Console.WriteLine("PENDING CHANGES:");
         foreach (var @event in events)
         {
             Console.WriteLine(@event);
@@ -28,10 +28,10 @@ public class SC01_FlightAggregate
         // Rehydrate aggregate from events.
         var replayedFlight = new Flight(events);
 
-        Console.WriteLine("CURRENT FLIGHT STATUS:");
+        Console.WriteLine("CURRENT FLIGHT STATUS (REPLAYED):");
         Console.WriteLine($"Version     = {replayedFlight.Version}");
         Console.WriteLine($"Origin      = {replayedFlight.OriginId}");
         Console.WriteLine($"Destination = {replayedFlight.DestinationId}");
-        Console.WriteLine($"Ship        = {replayedFlight.Route.First().ShipId}");
+        Console.WriteLine($"Leg(s)      = {replayedFlight.Route.Count()}");
     }
 }

@@ -39,10 +39,10 @@ public class SC02_CosmosEventStore
         //
         var replayedFlight = new Flight(events);
 
-        Console.WriteLine("CURRENT FLIGHT STATUS:");
+        Console.WriteLine("CURRENT FLIGHT STATUS (REPLAYED):");
         Console.WriteLine($"Version     = {replayedFlight.Version}");
         Console.WriteLine($"Origin      = {replayedFlight.OriginId}");
         Console.WriteLine($"Destination = {replayedFlight.DestinationId}");
-        Console.WriteLine($"Ship        = {replayedFlight.Route.First().ShipId}");
+        Console.WriteLine($"Leg(s)      = {replayedFlight.Route.Count()}");
     }
 }
